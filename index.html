@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中国历代书法家图表 · 知识图谱查询系统</title>
+<!-- ECharts CDN -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   全局重置 & 变量
+   ============================================================ */
+:root {
+  --paper: #F8F3EA;
+  --ink: #1F1F1F;
+  --border-brown: #5D4037;
+  --gold: #B08D57;
+  --gold-light: #C4A265;
+  --gold-dark: #8B7335;
+  --seal-red: #8B2500;
+  --text-primary: #1F1F1F;
+  --text-secondary: #5C5346;
+  --text-muted: #8B8174;
+  --card-bg: rgba(248, 243, 234, 0.85);
+  --card-border: rgba(93, 64, 55, 0.2);
+  --shadow-soft: 0 4px 20px rgba(93, 64, 55, 0.08);
+  --shadow-medium: 0 8px 40px rgba(93, 64, 55, 0.12);
+  --font-title: 'Ma Shan Zheng', 'ZCOOL XiaoWei', 'STKaiti', 'KaiTi', serif;
+  --font-body: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
+  --radius-card: 8px;
+  --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 119, 90, 0.015) 2px, rgba(139, 119, 90, 0.015) 3px),
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(139, 119, 90, 0.01) 3px, rgba(139, 119, 90, 0.01) 4px);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.7;
+}
+
+/* ============================================================
+   水墨背景装饰
+   ============================================================ */
+.bg-ink {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.bg-ink .wash {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.04;
+}
+.bg-ink .wash:nth-child(1) {
+  width: 700px; height: 700px;
+  background: radial-gradient(ellipse, #5D4037 0%, transparent 70%);
+  top: -15%; left: -10%;
+}
+.bg-ink .wash:nth-child(2) {
+  width: 500px; height: 500px;
+  background: radial-gradient(ellipse, #8B7335 0%, transparent 70%);
+  bottom: -10%; right: -8%;
+}
+.bg-ink .wash:nth-child(3) {
+  width: 400px; height: 400px;
+  background: radial-gradient(ellipse, #5D4037 0%, transparent 70%);
+  top: 40%; left: 60%;
+}
+/* 极轻微墨迹装饰点 */
+.bg-ink .dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(93, 64, 55, 0.03);
+}
+.bg-ink .dot:nth-child(4) { width: 120px; height: 120px; top: 20%; left: 5%; }
+.bg-ink .dot:nth-child(5) { width: 80px;  height: 80px;  bottom: 30%; right: 3%; }
+
+/* ============================================================
+   主容器
+   ============================================================ */
+.app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+/* ============================================================
+   顶部标题区
+   ============================================================ */
+.header {
+  text-align: center;
+  padding: 40px 0 16px;
+  position: relative;
+  animation: fadeInDown 1s ease-out;
+}
+.header::after {
+  content: '';
+  display: block;
+  width: 80px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 14px auto 0;
+}
+.header h1 {
+  font-family: var(--font-title);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  color: var(--ink);
+  letter-spacing: 6px;
+  line-height: 1.3;
+  position: relative;
+  display: inline-block;
+}
+.header h1 .gold-line {
+  display: block;
+  margin: 6px auto;
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.header .subtitle {
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  color: var(--text-secondary);
+  margin-top: 8px;
+  letter-spacing: 4px;
+  font-weight: 400;
+}
+
+/* ============================================================
+   搜索区域
+   ============================================================ */
+.search-section {
+  max-width: 700px;
+  margin: 28px auto 0;
+  animation: fadeInUp 1s ease-out 0.2s both;
+}
+.search-wrapper {
+  display: flex;
+  background: rgba(255,255,255,0.6);
+  border: 2px solid var(--card-border);
+  border-radius: 50px;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(8px);
+}
+.search-wrapper:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.15), var(--shadow-medium);
+  transform: translateY(-1px);
+}
+.search-wrapper input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 16px 28px;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+.search-wrapper input::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.search-wrapper button {
+  padding: 14px 32px;
+  background: var(--border-brown);
+  color: #F8F3EA;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  letter-spacing: 4px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 50px 50px 0;
+}
+.search-wrapper button::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(176,141,87,0.2) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.search-wrapper button:hover::before { opacity: 1; }
+.search-wrapper button:hover {
+  background: #4A3328;
+}
+
+/* ============================================================
+   热门查询标签
+   ============================================================ */
+.hot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px auto 0;
+  max-width: 640px;
+  animation: fadeInUp 1s ease-out 0.35s both;
+}
+.hot-tag {
+  padding: 5px 16px;
+  border: 1px solid rgba(93,64,55,0.2);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  background: rgba(255,255,255,0.3);
+  font-family: var(--font-body);
+  letter-spacing: 1px;
+}
+.hot-tag:hover {
+  border-color: var(--gold);
+  color: var(--gold-dark);
+  background: rgba(176,141,87,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(176,141,87,0.12);
+}
+
+/* ============================================================
+   结果区域 - 三栏布局
+   ============================================================ */
+.results-area {
+  margin-top: 32px;
+  display: none;
+  gap: 20px;
+  animation: fadeInUp 0.8s ease-out;
+}
+.results-area.active {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+}
+
+/* ---- 左侧：信息面板 ---- */
+.info-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  padding: 24px 20px;
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+  max-height: 600px;
+  overflow-y: auto;
+}
+/* 古籍纹样装饰 - 顶部 */
+.info-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 5%, var(--gold) 20%, var(--gold) 80%, transparent 95%
+  );
+  opacity: 0.5;
+}
+/* 古籍纹样装饰 - 角落 */
+.info-panel .corner-deco {
+  position: absolute;
+  width: 40px; height: 40px;
+  border-color: rgba(176,141,87,0.2);
+  border-style: solid;
+}
+.info-panel .corner-deco.tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+.info-panel .corner-deco.tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+.info-panel .corner-deco.bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+.info-panel .corner-deco.br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+
+.info-panel .panel-title {
+  font-family: var(--font-title);
+  font-size: 1.3rem;
+  color: var(--border-brown);
+  text-align: center;
+  margin-bottom: 16px;
+  letter-spacing: 3px;
+}
+
+.info-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(93,64,55,0.08);
+}
+.info-item:last-child { border-bottom: none; }
+.info-item .label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.info-item .value {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* ---- 中间：知识图谱 ---- */
+.graph-container {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+.graph-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 5%, var(--gold) 20%, var(--gold) 80%, transparent 95%
+  );
+  opacity: 0.5;
+  z-index: 2;
+}
+#knowledge-graph {
+  width: 100%;
+  height: 580px;
+}
+
+/* ---- 右侧：作品展示 ---- */
+.works-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+.works-panel::-webkit-scrollbar { width: 3px; }
+.works-panel::-webkit-scrollbar-track { background: transparent; }
+.works-panel::-webkit-scrollbar-thumb { background: rgba(93,64,55,0.2); border-radius: 3px; }
+
+.work-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.work-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-medium);
+  border-color: rgba(176,141,87,0.3);
+}
+.work-card .work-img {
+  width: 100%;
+  height: 100px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.work-card .work-img svg {
+  width: 100%;
+  height: 100%;
+}
+.work-card .work-name {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  color: var(--border-brown);
+  letter-spacing: 2px;
+}
+.work-card .work-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 2px 0 4px;
+}
+.work-card .work-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================================
+   时间轴模块
+   ============================================================ */
+.timeline-section {
+  margin-top: 32px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  padding: 28px 20px 24px;
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.timeline-section.visible { opacity: 1; transform: translateY(0); }
+.timeline-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 5%, var(--gold) 20%, var(--gold) 80%, transparent 95%
+  );
+  opacity: 0.5;
+}
+.timeline-section .section-title {
+  text-align: center;
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  color: var(--border-brown);
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+}
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 8px 14px;
+  position: relative;
+}
+.timeline-item:hover { transform: translateY(-4px); }
+.timeline-item .tl-year {
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  letter-spacing: 2px;
+  transition: var(--transition);
+}
+.timeline-item:hover .tl-year { color: var(--gold-dark); }
+.timeline-item .tl-dot {
+  width: 12px; height: 12px;
+  border: 2px solid var(--border-brown);
+  border-radius: 50%;
+  margin: 4px 0;
+  background: var(--paper);
+  transition: var(--transition);
+}
+.timeline-item.active .tl-dot,
+.timeline-item:hover .tl-dot {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(176,141,87,0.3);
+}
+.timeline-item .tl-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 60px;
+  line-height: 1.3;
+}
+.timeline-arrow {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   书体演变图
+   ============================================================ */
+.style-evolution {
+  margin: 32px 0 40px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  padding: 28px 20px 24px;
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.style-evolution.visible { opacity: 1; transform: translateY(0); }
+.style-evolution::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 5%, var(--gold) 20%, var(--gold) 80%, transparent 95%
+  );
+  opacity: 0.5;
+}
+.style-evolution .section-title {
+  text-align: center;
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  color: var(--border-brown);
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+}
+#style-graph {
+  width: 100%;
+  height: 200px;
+}
+
+/* ============================================================
+   页脚
+   ============================================================ */
+.footer {
+  text-align: center;
+  padding: 20px 0 32px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  border-top: 1px solid rgba(93,64,55,0.08);
+  margin-top: 16px;
+}
+
+/* ============================================================
+   加载提示
+   ============================================================ */
+.loading-overlay {
+  position: absolute; inset: 0;
+  background: rgba(248,243,234,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(2px);
+}
+.loading-spinner {
+  width: 32px; height: 32px;
+  border: 2px solid rgba(93,64,55,0.1);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================================
+   动画关键帧
+   ============================================================ */
+@keyframes fadeInDown {
+  from { opacity:0; transform:translateY(-20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes inkSpread {
+  0%   { opacity:0; transform:scale(0.8); }
+  100% { opacity:1; transform:scale(1); }
+}
+
+/* ============================================================
+   自定义滚动条
+   ============================================================ */
+.info-panel::-webkit-scrollbar { width: 3px; }
+.info-panel::-webkit-scrollbar-track { background: transparent; }
+.info-panel::-webkit-scrollbar-thumb { background: rgba(93,64,55,0.15); border-radius: 3px; }
+
+/* ============================================================
+   响应式设计
+   ============================================================ */
+@media (max-width: 1024px) {
+  .results-area.active {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .info-panel { max-height: none; }
+  .works-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-height: none;
+  }
+  .work-card { flex: 1; min-width: 200px; max-width: 280px; }
+  #knowledge-graph { height: 450px; }
+}
+@media (max-width: 640px) {
+  .app { padding: 0 12px; }
+  .header h1 { letter-spacing: 3px; }
+  .header .subtitle { letter-spacing: 2px; }
+  .search-wrapper { flex-direction: column; border-radius: 16px; }
+  .search-wrapper input { padding: 14px 18px; }
+  .search-wrapper button { border-radius: 0 0 16px 16px; padding: 12px; }
+  .timeline-item { padding: 6px 8px; }
+  .timeline-arrow { font-size: 0.8rem; }
+  .work-card { min-width: 100%; }
+  #knowledge-graph { height: 360px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 水墨背景 ===== -->
+<div class="bg-ink">
+  <div class="wash"></div>
+  <div class="wash"></div>
+  <div class="wash"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+
+<!-- ===== 主应用 ===== -->
+<div class="app">
+
+  <!-- ===== 顶部标题 ===== -->
+  <header class="header">
+    <h1>
+      中国历代书法家图表
+      <span class="gold-line"></span>
+    </h1>
+    <p class="subtitle">中国书法的历史沿革及书风演变 · 知识图谱查询系统</p>
+  </header>
+
+  <!-- ===== 搜索区 ===== -->
+  <section class="search-section">
+    <form class="search-wrapper" id="searchForm" autocomplete="off">
+      <input type="text" id="searchInput" placeholder="输入问题，如：文彭的字号是什么、文彭的父亲是谁…" aria-label="知识图谱查询">
+      <button type="submit">查 询</button>
+    </form>
+    <div class="hot-tags" id="hotTags">
+      <span class="hot-tag" data-query="文彭的字号是什么">文彭 · 字号</span>
+      <span class="hot-tag" data-query="文徵明的字号是什么">文徵明 · 字号</span>
+      <span class="hot-tag" data-query="何震的字号是什么">何震 · 字号</span>
+      <span class="hot-tag" data-query="文彭的父亲是谁">文彭 · 父亲</span>
+      <span class="hot-tag" data-query="王羲之">王羲之</span>
+      <span class="hot-tag" data-query="颜真卿">颜真卿</span>
+      <span class="hot-tag" data-query="兰亭序">兰亭序</span>
+    </div>
+  </section>
+
+  <!-- ===== 结果区：三栏 ===== -->
+  <div class="results-area" id="resultsArea">
+
+    <!-- 左侧：信息面板 -->
+    <aside class="info-panel" id="infoPanel">
+      <div class="corner-deco tl"></div>
+      <div class="corner-deco tr"></div>
+      <div class="corner-deco bl"></div>
+      <div class="corner-deco br"></div>
+      <div class="panel-title">︎ 人物小传</div>
+      <div id="infoContent">
+        <div style="text-align:center;color:var(--text-muted);padding:40px 0;font-size:0.85rem;">
+          查询书法家或作品<br>查看详细信息
+        </div>
+      </div>
+    </aside>
+
+    <!-- 中间：知识图谱 -->
+    <main class="graph-container">
+      <div class="loading-overlay" id="graphLoading" style="display:none;">
+        <div class="loading-spinner"></div>
+      </div>
+      <div id="knowledge-graph"></div>
+    </main>
+
+    <!-- 右侧：作品展示 -->
+    <aside class="works-panel" id="worksPanel">
+      <div style="text-align:center;color:var(--text-muted);padding:40px 10px;font-size:0.85rem;">
+        代表作品<br>将在此展示
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===== 时间轴 ===== -->
+  <section class="timeline-section" id="timelineSection">
+    <h2 class="section-title">中国书法发展时间轴</h2>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <!-- ===== 书体演变 ===== -->
+  <section class="style-evolution" id="styleSection">
+    <h2 class="section-title">书体演变关系图</h2>
+    <div id="style-graph"></div>
+  </section>
+
+  <!-- ===== 页脚 ===== -->
+  <footer class="footer">
+    中国历代书法家图表 · 知识图谱查询系统 · 故宫数字博物馆 × 中国书法知识图谱
+  </footer>
+</div>
+
+<script>
+// ================================================================
+// 数据
+// ================================================================
+const DATA = {
+  calligraphers: [
+    {
+      id: 'wangxizhi', name: '王羲之', dynasty: '东晋', birth: '303年', death: '361年',
+      achievement: '书圣',
+      style: '行书、草书、楷书',
+      desc: '东晋时期著名书法家，被誉为"书圣"。其书法兼善隶、草、楷、行各体，精研体势，心摹手追，广采众长，备精诸体，冶于一炉，摆脱了汉魏笔风，自成一家，影响深远。',
+      feature: '笔法遒劲，结构精妙，章法自然，气韵生动。代表作《兰亭序》被誉为"天下第一行书"。',
+      status: '中国书法史上最具影响力的书法家，对后世书法发展产生深远影响。',
+      works: ['兰亭序', '快雪时晴帖'],
+      relations: { dynasty: '东晋', style: '行书', people: ['王献之'], works: ['兰亭序', '快雪时晴帖'], title: '书圣' }
+    },
+    {
+      id: 'wangxianzhi', name: '王献之', dynasty: '东晋', birth: '344年', death: '386年',
+      achievement: '与其父并称"二王"',
+      style: '行书、草书',
+      desc: '王羲之第七子，东晋著名书法家。书法众体皆精，尤以行草著名。敢于创新，不为其父所囿，进一步改变了当时古拙的书风，为魏晋以来的今楷、今草作出了卓越贡献。',
+      feature: '笔法奔放洒脱，气势恢弘，有"破体"之称，对后世影响深远。',
+      status: '与其父王羲之并称"二王"，在中国书法史上占有重要地位。',
+      works: ['中秋帖'],
+      relations: { dynasty: '东晋', style: '行书', people: ['王羲之'], works: ['中秋帖'], title: '二王' }
+    },
+    {
+      id: 'ouyangxun', name: '欧阳询', dynasty: '唐代', birth: '557年', death: '641年',
+      achievement: '楷书四大家之一',
+      style: '楷书',
+      desc: '唐代著名书法家，楷书四大家之一。其书法于平正中见险绝，号"欧体"。其楷书被后世称为"楷法极则"，对后世楷书发展影响极为深远。',
+      feature: '结体严谨，笔力险峻，法度森严，结构独异，世称"欧体"。',
+      status: '楷书四大家之首，其楷书为后世学习楷书的重要范本。',
+      works: ['九成宫醴泉铭'],
+      relations: { dynasty: '唐代', style: '楷书', people: [], works: ['九成宫醴泉铭'], title: '楷书四大家' }
+    },
+    {
+      id: 'yanzhenqing', name: '颜真卿', dynasty: '唐代', birth: '709年', death: '784年',
+      achievement: '楷书四大家之一',
+      style: '楷书、行书',
+      desc: '唐代著名书法家，楷书四大家之一。其正楷端庄雄伟，行书气势遒劲，创"颜体"书风，对后世影响极大。与柳公权并称"颜柳"，有"颜筋柳骨"之誉。',
+      feature: '笔法圆润厚重，结构方正茂密，气势雄强，世称"颜体"。',
+      status: '楷书四大家之一，其书法艺术代表唐代楷书的最高成就之一。',
+      works: ['多宝塔碑', '祭侄文稿'],
+      relations: { dynasty: '唐代', style: '楷书', people: ['柳公权'], works: ['多宝塔碑', '祭侄文稿'], title: '楷书四大家' }
+    },
+    {
+      id: 'liugongquan', name: '柳公权', dynasty: '唐代', birth: '778年', death: '865年',
+      achievement: '楷书四大家之一',
+      style: '楷书',
+      desc: '唐代著名书法家，楷书四大家之一。其书法以楷书著称，初学王羲之，后遍观唐代名家书法，吸取颜真卿、欧阳询之长，自创独树一帜的"柳体"。',
+      feature: '笔法清健挺拔，结体严谨，骨力遒劲，世称"柳体"，有"颜筋柳骨"之誉。',
+      status: '楷书四大家之一，"颜筋柳骨"中的"柳骨"代表。',
+      works: ['玄秘塔碑'],
+      relations: { dynasty: '唐代', style: '楷书', people: ['颜真卿'], works: ['玄秘塔碑'], title: '楷书四大家' }
+    },
+    {
+      id: 'sushi', name: '苏轼', dynasty: '宋代', birth: '1037年', death: '1101年',
+      achievement: '宋四家之首',
+      style: '行书',
+      desc: '宋代文学家、书法家，宋四家之首。其书法取法颜真卿、杨凝式等，用笔丰腴跌宕，有天真烂漫之趣。与黄庭坚、米芾、蔡襄并称"宋四家"。',
+      feature: '笔法丰腴饱满，气势雄放，章法自然，有"石压蛤蟆"之评，实为独特风格。',
+      status: '宋代书法第一人，"宋四家"之首，文人书法代表人物。',
+      works: ['寒食帖'],
+      relations: { dynasty: '宋代', style: '行书', people: ['黄庭坚'], works: ['寒食帖'], title: '宋四家' }
+    },
+    {
+      id: 'huangtingjian', name: '黄庭坚', dynasty: '宋代', birth: '1045年', death: '1105年',
+      achievement: '宋四家之一',
+      style: '行书、草书',
+      desc: '宋代著名书法家、诗人，宋四家之一。其书法取法颜真卿及怀素，用笔以侧险取势，纵横奇崛，自成一家。',
+      feature: '笔法纵横奇崛，长枪大戟，结体中宫收紧、四维开张，极具个性。',
+      status: '"宋四家"之一，对后世书法特别是草书发展有重要影响。',
+      works: [],
+      relations: { dynasty: '宋代', style: '行书', people: ['苏轼'], works: [], title: '宋四家' }
+    },
+    {
+      id: 'zhaomengfu', name: '赵孟頫', dynasty: '元代', birth: '1254年', death: '1322年',
+      achievement: '楷书四大家之一',
+      style: '楷书、行书',
+      desc: '元代著名书法家、画家，楷书四大家之一。其书法集晋唐之大成，兴复古学，创立"赵体"，对元、明、清三代书法影响极大。',
+      feature: '笔法圆润秀美，结构匀称严谨，风格飘逸典雅，世称"赵体"。',
+      status: '楷书四大家之一，元代书法第一人，承前启后的书法大家。',
+      works: [],
+      relations: { dynasty: '元代', style: '楷书', people: [], works: [], title: '楷书四大家' }
+    }
+  ],
+
+  works: [
+    { id: 'lantingxu', name: '兰亭序', calligrapher: '王羲之', dynasty: '东晋',
+      year: '353年', style: '行书',
+      desc: '被誉为"天下第一行书"。东晋永和九年（353年）三月三日，王羲之与谢安、孙绰等41人在山阴兰亭举行修禊之礼，酒酣之际即兴而作。全文324字，笔法变化莫测，被誉为书法艺术之巅峰。',
+      bg: '东晋永和九年，王羲之与友人雅集兰亭，饮酒赋诗后即兴所作。' },
+    { id: 'kuaixueshiqing', name: '快雪时晴帖', calligrapher: '王羲之', dynasty: '东晋',
+      year: '约4世纪', style: '行书',
+      desc: '王羲之行书法帖。全文4行28字，内容是写给友人的一则简短信札。笔法圆润秀美，神采飞扬，是王羲之行书的代表作之一。',
+      bg: '王羲之在雪后天晴时写给友人的问候信札。' },
+    { id: 'jiuchenggong', name: '九成宫醴泉铭', calligrapher: '欧阳询', dynasty: '唐代',
+      year: '632年', style: '楷书',
+      desc: '欧阳询楷书代表作，被誉为"楷书极则"。刻于唐贞观六年（632年），由魏徵撰文，欧阳询书写。笔法严谨，结构精妙，是学习楷书的经典范本。',
+      bg: '唐太宗在九成宫发现醴泉，命魏徵撰文、欧阳询书丹立碑。' },
+    { id: 'duobaota', name: '多宝塔碑', calligrapher: '颜真卿', dynasty: '唐代',
+      year: '752年', style: '楷书',
+      desc: '颜真卿楷书代表作之一，全称《大唐西京千福寺多宝佛塔感应碑》。笔法厚重雄强，结构方正茂密，是颜体楷书的典型代表。',
+      bg: '颜真卿44岁时所书，是其早期楷书的代表作品。' },
+    { id: 'jizhiwengao', name: '祭侄文稿', calligrapher: '颜真卿', dynasty: '唐代',
+      year: '758年', style: '行书',
+      desc: '被誉为"天下第二行书"。颜真卿为祭奠在安史之乱中遇害的侄儿颜季明而作。笔法苍劲悲愤，情感真挚动人，是书法史上情感与艺术完美结合的杰作。',
+      bg: '安史之乱中，颜真卿的侄儿颜季明殉国。颜真卿悲愤交加，写下这篇祭文。' },
+    { id: 'xuanmita', name: '玄秘塔碑', calligrapher: '柳公权', dynasty: '唐代',
+      year: '841年', style: '楷书',
+      desc: '柳公权楷书代表作，全称《大秦玄秘塔碑》。笔法清健挺拔，结体严谨，骨力遒劲，是"柳体"书法的典范之作。',
+      bg: '柳公权晚年代表作，体现了其"柳骨"的书法风格。' },
+    { id: 'hanshitie', name: '寒食帖', calligrapher: '苏轼', dynasty: '宋代',
+      year: '1082年', style: '行书',
+      desc: '被誉为"天下第三行书"。苏轼被贬黄州期间所作，书写了自己的两首寒食诗。笔法苍劲沉郁，情感跌宕起伏，是文人书法的巅峰之作。',
+      bg: '苏轼被贬黄州第三年的寒食节所作，抒发其苦闷心境。' }
+  ],
+
+  dynasties: [
+    { name: '秦朝', period: '前221-前207', desc: '统一文字，小篆为官方书体' },
+    { name: '汉朝', period: '前202-220', desc: '隶书鼎盛，草书、行书萌芽' },
+    { name: '魏晋', period: '220-420', desc: '行书成熟，楷书兴起，书圣王羲之' },
+    { name: '隋唐', period: '581-907', desc: '楷书鼎盛，颜柳欧褚大家辈出' },
+    { name: '宋代', period: '960-1279', desc: '尚意书风，苏轼黄庭坚领衔' },
+    { name: '元代', period: '1271-1368', desc: '复古书风，赵孟頫影响深远' },
+    { name: '明代', period: '1368-1644', desc: '台阁体盛行，文人书风延续' },
+    { name: '清代', period: '1636-1912', desc: '碑学兴起，金石书风繁荣' }
+  ],
+
+  styles: ['篆书', '隶书', '楷书', '行书', '草书'],
+
+  // 知识图谱实际实体（来自 knowledge_graph.ttl）
+  kgEntities: [
+    {
+      id: 'wenpeng', name: '文彭', dynasty: '明代', birth: '1498年', death: '1573年',
+      achievement: '篆刻家、书法家',
+      style: '篆书、行书',
+      desc: '明代著名篆刻家、书法家，文徵明长子。其篆刻承家学，精于印章艺术，对明代篆刻发展有重要影响。书法继承家学，以行书见长。',
+      feature: '篆刻精妙，承继家法，书法秀润典雅。',
+      status: '明代篆刻代表人物，文氏家族书法传承的关键人物。',
+      works: [],
+      relations: { dynasty: '明代', style: '篆书', people: ['文徵明'], works: [], title: '文氏家族' },
+      inKG: true, kgRelations: { courtesyName: '寿承', fatherOf: '文徵明' }
+    },
+    {
+      id: 'wenzhengming', name: '文徵明', dynasty: '明代', birth: '1470年', death: '1559年',
+      achievement: '吴中四才子之一',
+      style: '行书、楷书',
+      desc: '明代著名书法家、画家、文学家，吴中四才子之一。其书法温润秀劲，稳重老成，法度谨严而意态生动。与祝允明、唐寅、徐祯卿并称"吴中四才子"。',
+      feature: '笔法温润秀劲，稳重老成，法度谨严。',
+      status: '明代中期书法代表人物，文氏家族书法奠基人。',
+      works: [],
+      relations: { dynasty: '明代', style: '行书', people: ['文彭'], works: [], title: '吴中四才子' },
+      inKG: true, kgRelations: { courtesyName: '徵仲' }
+    },
+    {
+      id: 'hezhen', name: '何震', dynasty: '明代', birth: '1530年', death: '1605年',
+      achievement: '篆刻家',
+      style: '篆书',
+      desc: '明代著名篆刻家，与文彭齐名。其篆刻刀法猛利，自成一派，对后世篆刻艺术有重要影响。',
+      feature: '刀法猛利，风格独特，自成一派。',
+      status: '明代篆刻大家，与文彭并称。',
+      works: [],
+      relations: { dynasty: '明代', style: '篆书', people: ['文彭'], works: [], title: '明代篆刻' },
+      inKG: true, kgRelations: { courtesyName: '长卿' }
+    }
+  ]
+};
+
+// ================================================================
+// API 配置
+// ================================================================
+const API_BASE = '/';
+
+// 谓词中文映射表（扩展此表即可支持新增谓词的中文显示）
+const PREDICATE_LABELS = {
+  courtesyName: '字号',
+  fatherOf: '父亲',
+  motherOf: '母亲',
+  sonOf: '儿子',
+  daughterOf: '女儿',
+  brotherOf: '兄弟',
+  teacherOf: '老师',
+  studentOf: '学生',
+  friendOf: '朋友',
+  masterOf: '师从',
+  bornIn: '出生地',
+  diedIn: '逝世地',
+  created: '创作',
+  wrote: '书写',
+  styleIs: '书体',
+  dynastyIs: '所属朝代',
+  titleIs: '称号',
+  alsoKnownAs: '别称',
+  influenced: '影响',
+  influencedBy: '受影响于'
+};
+
+// 朝代推断（根据生卒或已知人物反推）
+const DYNASTY_HINT = {
+  '文彭': '明代', '文徵明': '明代', '何震': '明代'
+};
+
+// 存放从后端动态加载的图谱原始数据
+let dynamicKG = null;
+
+// 将 /graph-data 返回的实体转换为前端可用对象
+function buildEntityFromTTL(ttlEntity) {
+  const rels = ttlEntity.relations || [];
+  const obj = {
+    name: ttlEntity.name,
+    type: ttlEntity.type,
+    ttlRelations: rels,
+    dynasty: DYNASTY_HINT[ttlEntity.name] || '',
+    birth: '', death: '',
+    achievement: '',
+    style: '',
+    desc: '',
+    feature: '',
+    status: '',
+    inKG: true,
+    kgRelations: {},
+    relations: { dynasty: DYNASTY_HINT[ttlEntity.name] || '', style: '', people: [], works: [], title: '' }
+  };
+
+  rels.forEach(r => {
+    const label = PREDICATE_LABELS[r.predicate] || r.predicate;
+    if (r.objectType === 'literal') {
+      obj.kgRelations[r.predicate] = r.object;
+    } else {
+      // 对象也是实体（人物/朝代等）
+      obj.kgRelations[r.predicate] = r.object;
+      if (r.predicate === 'dynastyIs') {
+        obj.relations.dynasty = r.object;
+        obj.dynasty = r.object;
+      } else {
+        obj.relations.people.push(r.object);
+      }
+    }
+  });
+
+  return obj;
+}
+
+// 将动态 KG 实体与硬编码的富文本数据合并
+function mergeWithRichData(ttlEntities) {
+  return ttlEntities.map(te => {
+    const name = te.name;
+    // 先在硬编码数据中查找同名
+    const rich = DATA.kgEntities.find(c => c.name === name);
+    if (rich) {
+      // 用动态关系覆盖硬编码关系，保留富文本描述
+      const merged = { ...rich };
+      merged.ttlRelations = te.ttlRelations;
+      merged.kgRelations = te.kgRelations;
+      merged.relations = { ...rich.relations, ...te.relations, people: [...new Set([...(rich.relations.people || []), ...(te.relations.people || [])])] };
+      merged.inKG = true;
+      return merged;
+    }
+    // 全新实体，用 TTL 数据生成基础信息
+    return buildEntityFromTTL(te);
+  });
+}
+
+// ================================================================
+// 工具
+// ================================================================
+function findCalligrapher(name) {
+  return DATA.calligraphers.find(c => c.name === name) || DATA.kgEntities.find(c => c.name === name);
+}
+function findWork(name) {
+  return DATA.works.find(w => w.name === name);
+}
+function findByDynasty(name) {
+  return DATA.calligraphers.filter(c => c.dynasty === name).concat(DATA.kgEntities.filter(c => c.dynasty === name));
+}
+
+// ================================================================
+// API 调用
+// ================================================================
+async function fetchStats() {
+  try {
+    const res = await fetch(API_BASE + 'stats');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.warn('获取统计信息失败:', err.message);
+    return null;
+  }
+}
+
+async function askBackend(question) {
+  const loading = document.getElementById('graphLoading');
+  loading.style.display = 'flex';
+  try {
+    const res = await fetch(API_BASE + 'ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    loading.style.display = 'none';
+    return data;
+  } catch (err) {
+    console.warn('后端查询失败:', err.message);
+    loading.style.display = 'none';
+    return null;
+  }
+}
+
+// 从问题中提取实体名（用于图谱展示，涵盖所有动态+静态实体）
+function extractEntityFromQuestion(question) {
+  const allPeople = [...DATA.calligraphers, ...DATA.kgEntities];
+  // 按名称长度降序排列，优先匹配长名称（避免"文徵明"被"文彭"误匹配）
+  allPeople.sort((a, b) => (b.name || '').length - (a.name || '').length);
+  for (const p of allPeople) {
+    if (question.includes(p.name)) return p.name;
+  }
+  for (const w of DATA.works) {
+    if (question.includes(w.name)) return w.name;
+  }
+  for (const d of DATA.dynasties) {
+    if (question.includes(d.name)) return d.name;
+  }
+  for (const s of DATA.styles) {
+    if (question.includes(s)) return s;
+  }
+  return null;
+}
+
+// 构建 KG 实体专用的图谱数据（支持任意 TTL 谓词，新增实体自动渲染）
+function buildKGEntityGraph(entity) {
+  const nodes = [];
+  const links = [];
+  const added = new Set();
+
+  nodes.push({
+    id: entity.name, name: entity.name, category: 0, symbolSize: 70,
+    itemStyle: { color: '#8B2500', borderColor: '#5D4037', borderWidth: 3, shadowBlur: 10, shadowColor: 'rgba(139,37,0,0.2)' },
+    label: { fontSize: 16, fontWeight: 'bold', color: '#1F1F1F' }
+  });
+  added.add(entity.name);
+
+  // 朝代
+  const dynasty = entity.relations.dynasty || entity.dynasty;
+  if (dynasty && !added.has(dynasty)) {
+    nodes.push({
+      id: dynasty, name: dynasty, category: 1, symbolSize: 44,
+      itemStyle: { color: '#5D4037', borderColor: '#8B7335', borderWidth: 2 },
+      label: { fontSize: 12, color: '#5D4037' }
+    });
+    added.add(dynasty);
+    links.push({ source: entity.name, target: dynasty, label: '所属朝代', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+  }
+
+  // 书体
+  const style = entity.relations.style;
+  if (style && !added.has(style)) {
+    nodes.push({
+      id: style, name: style, category: 2, symbolSize: 44,
+      itemStyle: { color: '#8B7335', borderColor: '#5D4037', borderWidth: 2 },
+      label: { fontSize: 12, color: '#5D4037' }
+    });
+    added.add(style);
+    links.push({ source: entity.name, target: style, label: '擅长书体', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+  }
+
+  // ===== 通用 TTL 关系渲染（支持任意新增谓词） =====
+  if (entity.inKG && entity.kgRelations) {
+    Object.keys(entity.kgRelations).forEach(pred => {
+      const value = entity.kgRelations[pred];
+      const label = PREDICATE_LABELS[pred] || pred;
+      // 判断该谓词对应的是实体还是字面量
+      const isEntity = entity.ttlRelations
+        ? entity.ttlRelations.some(r => r.predicate === pred && r.objectType === 'entity')
+        : false;
+
+      if (isEntity && value) {
+        if (!added.has(value)) {
+          nodes.push({
+            id: value, name: value, category: 0, symbolSize: 44,
+            itemStyle: { color: '#A0522D', borderColor: '#5D4037', borderWidth: 2 },
+            label: { fontSize: 12, color: '#1F1F1F' }
+          });
+          added.add(value);
+        }
+        links.push({ source: entity.name, target: value, label: label, lineStyle: { color: '#8B2500', width: 2, curveness: 0.3 } });
+      } else if (value) {
+        if (!added.has(value)) {
+          nodes.push({
+            id: value, name: value, category: 4, symbolSize: 36,
+            itemStyle: { color: '#C4A265', borderColor: '#8B7335', borderWidth: 1.5 },
+            label: { fontSize: 11, color: '#8B7335' }
+          });
+          added.add(value);
+        }
+        links.push({ source: entity.name, target: value, label: label, lineStyle: { color: '#B08D57', width: 1.8, curveness: 0.2, type: 'dashed' } });
+      }
+    });
+  }
+
+  // 人物关系
+  if (entity.relations.people && entity.relations.people.length > 0) {
+    entity.relations.people.forEach(p => {
+      if (!added.has(p)) {
+        nodes.push({
+          id: p, name: p, category: 0, symbolSize: 44,
+          itemStyle: { color: '#A0522D', borderColor: '#5D4037', borderWidth: 2 },
+          label: { fontSize: 12, color: '#1F1F1F' }
+        });
+        added.add(p);
+      }
+      links.push({ source: entity.name, target: p, label: '关联人物', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.3 } });
+    });
+  }
+
+  // 称号
+  const title = entity.relations.title;
+  if (title && !added.has(title)) {
+    nodes.push({
+      id: title, name: title, category: 4, symbolSize: 38,
+      itemStyle: { color: '#C4A265', borderColor: '#8B7335', borderWidth: 1 },
+      label: { fontSize: 11, color: '#8B7335' }
+    });
+    added.add(title);
+    links.push({ source: entity.name, target: title, label: '称号', lineStyle: { color: '#C4A265', width: 1.2, curveness: 0.2 } });
+  }
+
+  return { nodes, links };
+}
+
+// ================================================================
+// 知识图谱 (ECharts)
+// ================================================================
+let graphChart = null;
+let styleChart = null;
+let currentQuery = '王羲之';
+
+function buildGraphData(calligrapher) {
+  const nodes = [];
+  const links = [];
+  const added = new Set();
+
+  // 中心节点
+  nodes.push({
+    id: calligrapher.name,
+    name: calligrapher.name,
+    category: 0,
+    symbolSize: 70,
+    itemStyle: {
+      color: '#8B2500',
+      borderColor: '#5D4037',
+      borderWidth: 3,
+      shadowBlur: 10,
+      shadowColor: 'rgba(139,37,0,0.2)'
+    },
+    label: { fontSize: 16, fontWeight: 'bold', color: '#1F1F1F' }
+  });
+  added.add(calligrapher.name);
+
+  // 朝代
+  const dynasty = calligrapher.relations.dynasty;
+  if (!added.has(dynasty)) {
+    nodes.push({
+      id: dynasty, name: dynasty, category: 1, symbolSize: 44,
+      itemStyle: { color: '#5D4037', borderColor: '#8B7335', borderWidth: 2 },
+      label: { fontSize: 12, color: '#5D4037' }
+    });
+    added.add(dynasty);
+  }
+  links.push({ source: calligrapher.name, target: dynasty, label: '所属朝代', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+
+  // 书体
+  const style = calligrapher.relations.style;
+  if (!added.has(style)) {
+    nodes.push({
+      id: style, name: style, category: 2, symbolSize: 44,
+      itemStyle: { color: '#8B7335', borderColor: '#5D4037', borderWidth: 2 },
+      label: { fontSize: 12, color: '#5D4037' }
+    });
+    added.add(style);
+  }
+  links.push({ source: calligrapher.name, target: style, label: '擅长书体', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+
+  // 人物关系
+  if (calligrapher.relations.people) {
+    calligrapher.relations.people.forEach(p => {
+      if (!added.has(p)) {
+        const rel = findCalligrapher(p);
+        nodes.push({
+          id: p, name: p, category: 0, symbolSize: 50,
+          itemStyle: { color: '#A0522D', borderColor: '#5D4037', borderWidth: 2 },
+          label: { fontSize: 12, color: '#1F1F1F' }
+        });
+        added.add(p);
+      }
+      links.push({ source: calligrapher.name, target: p, label: '关联人物', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.3 } });
+    });
+  }
+
+  // 作品
+  if (calligrapher.relations.works) {
+    calligrapher.relations.works.forEach(w => {
+      if (!added.has(w)) {
+        const work = findWork(w);
+        nodes.push({
+          id: w, name: w, category: 3, symbolSize: 50,
+          itemStyle: { color: '#D4A574', borderColor: '#5D4037', borderWidth: 2 },
+          label: { fontSize: 12, color: '#5C5346' }
+        });
+        added.add(w);
+      }
+      links.push({ source: calligrapher.name, target: w, label: '代表作品', lineStyle: { color: '#B08D57', width: 2, curveness: 0.2 } });
+    });
+  }
+
+  // 称号
+  const title = calligrapher.relations.title;
+  if (title && !added.has(title)) {
+    nodes.push({
+      id: title, name: title, category: 4, symbolSize: 38,
+      itemStyle: { color: '#C4A265', borderColor: '#8B7335', borderWidth: 1 },
+      label: { fontSize: 11, color: '#8B7335' }
+    });
+    added.add(title);
+    links.push({ source: calligrapher.name, target: title, label: '称号', lineStyle: { color: '#C4A265', width: 1.2, curveness: 0.2 } });
+  }
+
+  return { nodes, links };
+}
+
+function renderGraph(queryName) {
+  const caller = findCalligrapher(queryName);
+  const work = findWork(queryName);
+
+  if (!caller && !work) {
+    // 尝试按朝代或书体展示
+    const byDynasty = findByDynasty(queryName);
+    if (byDynasty.length > 0) {
+      const nodes = [];
+      const links = [];
+      const added = new Set();
+      nodes.push({
+        id: queryName, name: queryName, category: 1, symbolSize: 60,
+        itemStyle: { color: '#5D4037', borderColor: '#8B7335', borderWidth: 3 },
+        label: { fontSize: 16, color: '#1F1F1F' }
+      });
+      added.add(queryName);
+      byDynasty.forEach(c => {
+        if (!added.has(c.name)) {
+          nodes.push({
+            id: c.name, name: c.name, category: 0, symbolSize: 44,
+            itemStyle: { color: '#8B2500', borderColor: '#5D4037', borderWidth: 2 },
+            label: { fontSize: 12, color: '#1F1F1F' }
+          });
+          added.add(c.name);
+        }
+        links.push({ source: queryName, target: c.name, label: '所属', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+      });
+      updateGraph(nodes, links);
+      return;
+    }
+    if (queryName === DATA.styles.find(s => s === queryName)) {
+      // 按书体查找
+      const related = DATA.calligraphers.filter(c => c.style.includes(queryName));
+      const nodes = [];
+      const links = [];
+      const added = new Set();
+      nodes.push({
+        id: queryName, name: queryName, category: 2, symbolSize: 60,
+        itemStyle: { color: '#8B7335', borderColor: '#5D4037', borderWidth: 3 },
+        label: { fontSize: 16, color: '#1F1F1F' }
+      });
+      added.add(queryName);
+      related.forEach(c => {
+        if (!added.has(c.name)) {
+          nodes.push({
+            id: c.name, name: c.name, category: 0, symbolSize: 44,
+            itemStyle: { color: '#8B2500', borderColor: '#5D4037', borderWidth: 2 },
+            label: { fontSize: 12, color: '#1F1F1F' }
+          });
+          added.add(c.name);
+        }
+        links.push({ source: queryName, target: c.name, label: '擅长', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+      });
+      updateGraph(nodes, links);
+      return;
+    }
+    // 默认
+    const defaultC = DATA.calligraphers[0];
+    const d = buildGraphData(defaultC);
+    updateGraph(d.nodes, d.links);
+    return;
+  }
+
+  if (work) {
+    const c = findCalligrapher(work.calligrapher);
+    if (c) {
+      const d = buildGraphData(c);
+      updateGraph(d.nodes, d.links);
+    }
+    return;
+  }
+
+  if (caller) {
+    const d = buildGraphData(caller);
+    updateGraph(d.nodes, d.links);
+  }
+}
+
+function updateGraph(nodes, links) {
+  const graphLoading = document.getElementById('graphLoading');
+  graphLoading.style.display = 'flex';
+
+  const dom = document.getElementById('knowledge-graph');
+  if (!graphChart) {
+    graphChart = echarts.init(dom);
+  }
+
+  const categories = [
+    { name: '书法家', itemStyle: { color: '#8B2500' } },
+    { name: '朝代', itemStyle: { color: '#5D4037' } },
+    { name: '书体', itemStyle: { color: '#8B7335' } },
+    { name: '作品', itemStyle: { color: '#D4A574' } },
+    { name: '称号', itemStyle: { color: '#C4A265' } }
+  ];
+
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      formatter: function(params) {
+        if (params.dataType === 'node') {
+          return `<strong style="font-family:serif;font-size:1.1em;">${params.name}</strong><br/>${params.data.category != null ? categories[params.data.category]?.name || '' : ''}`;
+        }
+        return `${params.data.source} → ${params.data.target}<br/>${params.data.label || ''}`;
+      },
+      backgroundColor: 'rgba(248,243,234,0.95)',
+      borderColor: '#B08D57',
+      borderWidth: 1,
+      textStyle: { fontFamily: 'Noto Serif SC, serif', color: '#1F1F1F', fontSize: 13 },
+      extraCssText: 'box-shadow: 0 4px 20px rgba(93,64,55,0.2);border-radius:8px;padding:10px 14px;'
+    },
+    animationDuration: 1500,
+    animationEasingUpdate: 'quinticInOut',
+    series: [{
+      type: 'graph',
+      layout: 'force',
+      force: {
+        repulsion: 500,
+        edgeLength: [120, 250],
+        layoutAnimation: true,
+        friction: 0.1,
+        gravity: 0.1
+      },
+      roam: true,
+      draggable: true,
+      data: nodes,
+      links: links,
+      categories: categories,
+      focusNodeAdjacency: true,
+      edgeSymbol: ['none', 'none'],
+      edgeLabel: {
+        show: true,
+        formatter: function(params) { return params.data.label || ''; },
+        fontSize: 10,
+        color: '#8B8174',
+        fontFamily: 'Noto Serif SC, serif'
+      },
+      lineStyle: {
+        color: 'source',
+        width: 2,
+        opacity: 0.6,
+        curveness: 0.2
+      },
+      emphasis: {
+        focus: 'adjacency',
+        lineStyle: {
+          width: 4,
+          opacity: 0.9
+        }
+      },
+      itemStyle: {
+        borderRadius: 0,
+        borderType: 'solid',
+        shadowBlur: 6,
+        shadowColor: 'rgba(93,64,55,0.15)'
+      },
+      label: {
+        position: 'bottom',
+        fontFamily: 'Noto Serif SC, serif',
+        fontWeight: 'normal',
+        color: '#1F1F1F',
+        fontSize: 12
+      },
+      symbol: 'circle',
+      symbolSize: 44,
+      roam: true
+    }]
+  };
+
+  graphChart.setOption(option, true);
+  graphChart.on('click', function(params) {
+    if (params.dataType === 'node') {
+      handleQuery(params.name);
+    }
+  });
+
+  // 等待渲染完成，隐藏加载
+  setTimeout(() => {
+    graphLoading.style.display = 'none';
+  }, 800);
+
+  window.addEventListener('resize', () => { graphChart && graphChart.resize(); });
+}
+
+// ================================================================
+// 信息面板更新
+// ================================================================
+function updateInfo(queryName) {
+  const container = document.getElementById('infoContent');
+  const caller = findCalligrapher(queryName);
+  const work = findWork(queryName);
+
+  if (caller) {
+    container.innerHTML = `
+      <div class="info-item">
+        <div class="label">姓名</div>
+        <div class="value" style="font-family:'Ma Shan Zheng',serif;font-size:1.3rem;">${caller.name}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">朝代</div>
+        <div class="value">${caller.dynasty}（${caller.birth}-${caller.death}）</div>
+      </div>
+      <div class="info-item">
+        <div class="label">书法成就</div>
+        <div class="value">${caller.achievement}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">擅长书体</div>
+        <div class="value">${caller.style}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">书风特点</div>
+        <div class="value">${caller.feature}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">历史地位</div>
+        <div class="value">${caller.status}</div>
+      </div>
+    `;
+  } else if (work) {
+    const caller2 = findCalligrapher(work.calligrapher);
+    container.innerHTML = `
+      <div class="info-item">
+        <div class="label">作品名称</div>
+        <div class="value" style="font-family:'Ma Shan Zheng',serif;font-size:1.2rem;">${work.name}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">作者</div>
+        <div class="value">${work.calligrapher}（${work.dynasty}）</div>
+      </div>
+      <div class="info-item">
+        <div class="label">创作年代</div>
+        <div class="value">${work.year}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">书体</div>
+        <div class="value">${work.style}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">创作背景</div>
+        <div class="value">${work.bg}</div>
+      </div>
+      <div class="info-item">
+        <div class="label">作品简介</div>
+        <div class="value">${work.desc}</div>
+      </div>
+    `;
+  } else {
+    const byDynasty = findByDynasty(queryName);
+    if (byDynasty.length > 0) {
+      container.innerHTML = `
+        <div class="info-item">
+          <div class="label">朝代</div>
+          <div class="value" style="font-family:'Ma Shan Zheng',serif;font-size:1.3rem;">${queryName}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">书法名家</div>
+          <div class="value">${byDynasty.map(c => c.name).join('、')}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">代表书体</div>
+          <div class="value">${[...new Set(byDynasty.flatMap(c => c.style.split('、')))].join('、')}</div>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <div style="text-align:center;color:var(--text-muted);padding:20px 0;font-size:0.85rem;">
+          未找到"${queryName}"的详细信息<br>
+          <span style="font-size:0.75rem;">请尝试搜索书法家、作品、朝代或书体</span>
+        </div>
+      `;
+    }
+  }
+}
+
+// ================================================================
+// 作品面板更新
+// ================================================================
+function updateWorks(queryName) {
+  const panel = document.getElementById('worksPanel');
+  const caller = findCalligrapher(queryName);
+  const work = findWork(queryName);
+
+  let works = [];
+  if (caller) {
+    works = DATA.works.filter(w => w.calligrapher === caller.name);
+  } else if (work) {
+    works = [work];
+  } else {
+    const byDynasty = findByDynasty(queryName);
+    if (byDynasty.length > 0) {
+      works = DATA.works.filter(w => byDynasty.some(c => c.name === w.calligrapher));
+    }
+  }
+
+  if (works.length === 0) {
+    panel.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:20px 10px;font-size:0.85rem;">暂无作品信息</div>`;
+    return;
+  }
+
+  panel.innerHTML = works.map(w => `
+    <div class="work-card" onclick="handleQuery('${w.name}')">
+      <div class="work-img">
+        <svg viewBox="0 0 260 100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="260" height="100" fill="#F5F0E6" rx="4"/>
+          <rect x="30" y="15" width="200" height="70" fill="none" stroke="#B08D57" stroke-width="0.5" rx="2"/>
+          <text x="130" y="50" font-family="serif" font-size="11" fill="#5D4037" text-anchor="middle" opacity="0.4">${w.name}</text>
+          <text x="130" y="70" font-family="serif" font-size="8" fill="#8B8174" text-anchor="middle" opacity="0.3">— ${w.calligrapher} —</text>
+          <line x1="40" y1="82" x2="220" y2="82" stroke="#B08D57" stroke-width="0.3" opacity="0.3"/>
+        </svg>
+      </div>
+      <div class="work-name">${w.name}</div>
+      <div class="work-meta">${w.calligrapher} · ${w.dynasty} · ${w.style}</div>
+      <div class="work-desc">${w.desc}</div>
+    </div>
+  `).join('');
+}
+
+// ================================================================
+// 查询主函数
+// ================================================================
+async function handleQuery(query) {
+  if (!query || !query.trim()) return;
+  const q = query.trim();
+  currentQuery = q;
+
+  // 显示结果区域
+  const area = document.getElementById('resultsArea');
+  area.classList.add('active');
+
+  // 1. 先调用后端 API 查询
+  const apiResult = await askBackend(q);
+  const apiAnswer = apiResult ? apiResult.answer : null;
+
+  // 2. 提取问题中的实体名用于知识图谱展示
+  const entityName = extractEntityFromQuestion(q);
+  const kgEntity = entityName ? (DATA.kgEntities.find(c => c.name === entityName) || null) : null;
+
+  // 3. 更新信息面板（优先显示 API 结果）
+  if (apiAnswer) {
+    updateInfoWithAnswer(q, apiAnswer, kgEntity);
+  } else {
+    updateInfo(q);
+  }
+
+  // 4. 更新知识图谱
+  if (kgEntity) {
+    const gData = buildKGEntityGraph(kgEntity);
+    updateGraph(gData.nodes, gData.links);
+  } else {
+    renderGraph(q);
+  }
+
+  // 5. 更新作品
+  updateWorks(q);
+
+  // 6. 滚动到结果区
+  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 当有 API 返回时，更新信息面板展示 API 答案
+function updateInfoWithAnswer(question, answer, kgEntity) {
+  const container = document.getElementById('infoContent');
+  let html = '';
+
+  // API 回答区块
+  html += `
+    <div class="info-item" style="background:rgba(176,141,87,0.06);border-radius:4px;padding:10px;margin-bottom:12px;border-left:3px solid var(--gold);">
+      <div class="label" style="color:var(--gold-dark);">知识图谱回答</div>
+      <div class="value" style="font-size:1rem;font-weight:600;color:var(--ink);">${escapeHtml(answer)}</div>
+    </div>`;
+
+  // 如果关联了 KG 实体，展示实体详情
+  if (kgEntity) {
+    const hasRich = kgEntity.achievement || kgEntity.desc;
+    const tagText = kgEntity.type || 'KG实体';
+    html += `
+      <div class="info-item">
+        <div class="label">姓名</div>
+        <div class="value" style="font-family:var(--font-title);font-size:1.3rem;">${kgEntity.name} <span style="font-size:0.7rem;color:var(--gold-dark);background:rgba(176,141,87,0.1);padding:2px 6px;border-radius:3px;">${tagText}</span></div>
+      </div>`;
+
+    if (kgEntity.dynasty) {
+      const birthDeath = (kgEntity.birth && kgEntity.death) ? `（${kgEntity.birth}-${kgEntity.death}）` : '';
+      html += `<div class="info-item"><div class="label">朝代</div><div class="value">${kgEntity.dynasty}${birthDeath}</div></div>`;
+    }
+
+    if (hasRich) {
+      if (kgEntity.achievement) html += `<div class="info-item"><div class="label">成就</div><div class="value">${kgEntity.achievement}</div></div>`;
+      if (kgEntity.feature) html += `<div class="info-item"><div class="label">书风特点</div><div class="value">${kgEntity.feature}</div></div>`;
+    }
+
+    // 知识图谱关系（通用渲染，支持任意谓词）
+    if (kgEntity.inKG && kgEntity.kgRelations) {
+      html += `<div class="info-item"><div class="label">知识图谱关系</div><div class="value">`;
+      Object.keys(kgEntity.kgRelations).forEach(pred => {
+        const label = PREDICATE_LABELS[pred] || pred;
+        html += `${label}：${kgEntity.kgRelations[pred]}<br>`;
+      });
+      html += `</div></div>`;
+    }
+
+    if (kgEntity.desc) {
+      html += `<div class="info-item"><div class="label">简介</div><div class="value">${kgEntity.desc}</div></div>`;
+    } else if (!hasRich) {
+      // 全新实体，无富文本数据，显示 TTL 原始信息
+      html += `<div class="info-item"><div class="label">说明</div><div class="value" style="color:var(--text-muted);font-size:0.8rem;">此实体来自知识图谱 TTL 文件，暂无详细描述。可在 DATA.kgEntities 中添加丰富信息。</div></div>`;
+    }
+  } else {
+    // 没有匹配到 KG 实体，但 API 有答案，显示原始问题
+    html += `
+      <div class="info-item">
+        <div class="label">查询问题</div>
+        <div class="value" style="font-size:0.88rem;">${escapeHtml(question)}</div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+// ================================================================
+// 时间轴
+// ================================================================
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  const dynasties = DATA.dynasties;
+
+  container.innerHTML = dynasties.map((d, i) => `
+    <div class="timeline-item" data-dynasty="${d.name}" onclick="handleQuery('${d.name}')">
+      <div class="tl-year">${d.name}</div>
+      <div class="tl-dot"></div>
+      <div class="tl-desc">${d.desc}</div>
+    </div>
+    ${i < dynasties.length - 1 ? '<span class="timeline-arrow">↓</span>' : ''}
+  `).join('');
+}
+
+// ================================================================
+// 书体演变图
+// ================================================================
+function renderStyleEvolution() {
+  const dom = document.getElementById('style-graph');
+  if (!dom) return;
+
+  const styles = DATA.styles;
+  const nodes = styles.map((s, i) => ({
+    id: s, name: s, symbolSize: 40 + (i === 2 ? 10 : 0),
+    itemStyle: {
+      color: ['#8B2500','#A0522D','#5D4037','#8B7335','#C4A265'][i],
+      borderColor: '#1F1F1F',
+      borderWidth: 1
+    },
+    label: { fontSize: 13, color: '#1F1F1F', fontWeight: 'bold' }
+  }));
+
+  const links = [];
+  for (let i = 0; i < styles.length - 1; i++) {
+    links.push({
+      source: styles[i],
+      target: styles[i + 1],
+      lineStyle: { color: '#B08D57', width: 2, curveness: 0 }
+    });
+  }
+
+  if (styleChart) {
+    styleChart.dispose();
+  }
+  styleChart = echarts.init(dom);
+
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      formatter: function(params) {
+        if (params.dataType === 'node') {
+          return `<strong style="font-family:serif;">${params.name}</strong><br/>点击查看擅长此体的书法家`;
+        }
+        return `${params.data.source} → ${params.data.target}`;
+      },
+      backgroundColor: 'rgba(248,243,234,0.95)',
+      borderColor: '#B08D57',
+      borderWidth: 1,
+      textStyle: { fontFamily: 'Noto Serif SC, serif', color: '#1F1F1F', fontSize: 12 }
+    },
+    series: [{
+      type: 'graph',
+      layout: 'force',
+      force: {
+        repulsion: 200,
+        edgeLength: 120,
+        layoutAnimation: false,
+        gravity: 0.05
+      },
+      roam: false,
+      draggable: true,
+      data: nodes,
+      links: links,
+      edgeSymbol: ['none', 'arrow'],
+      edgeSymbolSize: [0, 10],
+      lineStyle: {
+        color: '#B08D57',
+        width: 2,
+        curveness: 0,
+        opacity: 0.6
+      },
+      label: {
+        position: 'bottom',
+        fontFamily: 'Noto Serif SC, serif',
+        fontWeight: 'bold',
+        color: '#1F1F1F',
+        fontSize: 13,
+        offset: [0, 4]
+      },
+      symbol: 'roundRect',
+      symbolSize: [72, 36],
+      emphasis: {
+        focus: 'adjacency',
+        lineStyle: { width: 3 }
+      },
+      itemStyle: {
+        shadowBlur: 4,
+        shadowColor: 'rgba(93,64,55,0.1)'
+      },
+      roam: false
+    }]
+  };
+
+  styleChart.setOption(option);
+  styleChart.on('click', function(params) {
+    if (params.dataType === 'node') {
+      handleQuery(params.name);
+    }
+  });
+
+  window.addEventListener('resize', () => { styleChart && styleChart.resize(); });
+}
+
+// ================================================================
+// 滚动检测 - 渐入动画
+// ================================================================
+function observeSections() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  const tl = document.getElementById('timelineSection');
+  const se = document.getElementById('styleSection');
+  if (tl) observer.observe(tl);
+  if (se) observer.observe(se);
+}
+
+// ================================================================
+// 初始化
+// ================================================================
+document.addEventListener('DOMContentLoaded', async function() {
+  // 1. 加载知识图谱统计信息
+  const stats = await fetchStats();
+  if (stats) {
+    const headerEl = document.querySelector('.header');
+    let statsEl = document.getElementById('kgStats');
+    if (!statsEl) {
+      statsEl = document.createElement('div');
+      statsEl.id = 'kgStats';
+      statsEl.style.cssText = 'text-align:center;margin-top:8px;font-size:0.78rem;color:var(--text-muted);letter-spacing:2px;';
+      headerEl.appendChild(statsEl);
+    }
+    statsEl.innerHTML = `📦 实体 ${stats.entity_count} · 🔗 关系 ${stats.relation_count} · ⚙️ RDF / Fuseki / SPARQL / LangGraph`;
+  }
+
+  // 2. 加载动态知识图谱数据（核心：从这里实时同步 TTL 变更）
+  try {
+    const res = await fetch(API_BASE + 'graph-data');
+    if (res.ok) {
+      dynamicKG = await res.json();
+      // 将 TTL 数据转换为前端实体并合并富文本描述
+      if (dynamicKG.entities && dynamicKG.entities.length > 0) {
+        DATA.kgEntities = mergeWithRichData(dynamicKG.entities);
+        console.log(`[KG] 已加载 ${DATA.kgEntities.length} 个知识图谱实体（来自 TTL 文件）`);
+        console.log(`[KG] 谓词列表: ${dynamicKG.predicates.join(', ')}`);
+      }
+    }
+  } catch (err) {
+    console.warn('[KG] 加载图谱数据失败，使用本地数据:', err.message);
+  }
+
+  // 3. 动态更新热门标签：将 TTL 中的实体名添加到标签区
+  if (dynamicKG && dynamicKG.entities && dynamicKG.entities.length > 0) {
+    const tagsContainer = document.getElementById('hotTags');
+    const existingNames = new Set(Array.from(tagsContainer.querySelectorAll('.hot-tag')).map(t => t.dataset.query));
+    dynamicKG.entities.forEach(ent => {
+      // 为每个实体生成两个标签：字号查询 & 关系查询
+      const hasCourtesy = ent.relations.some(r => r.predicate === 'courtesyName');
+      const hasFather = ent.relations.some(r => r.predicate === 'fatherOf');
+      const hasAnyEntityRel = ent.relations.some(r => r.objectType === 'entity');
+
+      if (hasCourtesy) {
+        const q = `${ent.name}的字号是什么`;
+        if (!existingNames.has(q)) {
+          const tag = document.createElement('span');
+          tag.className = 'hot-tag';
+          tag.dataset.query = q;
+          tag.textContent = `${ent.name} · 字号`;
+          tag.addEventListener('click', () => { document.getElementById('searchInput').value = q; handleQuery(q); });
+          tagsContainer.appendChild(tag);
+          existingNames.add(q);
+        }
+      }
+      if (hasFather) {
+        const q = `${ent.name}的父亲是谁`;
+        if (!existingNames.has(q)) {
+          const tag = document.createElement('span');
+          tag.className = 'hot-tag';
+          tag.dataset.query = q;
+          tag.textContent = `${ent.name} · 父亲`;
+          tag.addEventListener('click', () => { document.getElementById('searchInput').value = q; handleQuery(q); });
+          tagsContainer.appendChild(tag);
+          existingNames.add(q);
+        }
+      }
+      if (hasAnyEntityRel && !hasCourtesy && !hasFather) {
+        const q = `查询${ent.name}`;
+        if (!existingNames.has(q)) {
+          const tag = document.createElement('span');
+          tag.className = 'hot-tag';
+          tag.dataset.query = q;
+          tag.textContent = ent.name;
+          tag.addEventListener('click', () => { document.getElementById('searchInput').value = q; handleQuery(q); });
+          tagsContainer.appendChild(tag);
+          existingNames.add(q);
+        }
+      }
+    });
+  }
+
+  // 4. 搜索表单
+  document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('searchInput');
+    const val = input.value.trim();
+    if (val) {
+      handleQuery(val);
+      input.blur();
+    }
+  });
+
+  // 5. 热门标签（静态部分）
+  document.querySelectorAll('.hot-tag').forEach(tag => {
+    tag.addEventListener('click', function() {
+      const query = this.dataset.query;
+      document.getElementById('searchInput').value = query;
+      handleQuery(query);
+    });
+  });
+
+  // 6. 时间轴
+  renderTimeline();
+
+  // 7. 初始查询 - 优先显示第一个 KG 实体
+  const firstEntity = DATA.kgEntities.length > 0 ? DATA.kgEntities[0].name : '王羲之';
+  handleQuery(firstEntity);
+
+  // 8. 书体演变
+  renderStyleEvolution();
+
+  // 9. 滚动观测
+  observeSections();
+
+  // 10. 窗口resize
+  window.addEventListener('resize', () => {
+    if (graphChart) graphChart.resize();
+    if (styleChart) styleChart.resize();
+  });
+});
+</script>
+
+</body>
+</html>

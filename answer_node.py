@@ -49,8 +49,10 @@ def answer_node(state):
     # 没有结果
     if not raw_results:
         # 尝试给个友好回复
-        if person:
-            state["answer"] = f'未找到 "{person}" 的相关信息，请确认查询内容是否正确。'
+        if person and relation_zh:
+            state["answer"] = f'知识图谱中暂无"{person}"的{relation_zh}记录。'
+        elif person:
+            state["answer"] = f'知识图谱中暂无"{person}"的相关信息。'
         else:
             state["answer"] = "未找到相关结果，请换个问题试试。"
         return state
