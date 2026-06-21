@@ -1,0 +1,84 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix ex: <http://example.org/> .
+
+ex:CalligraphyStyle a rdfs:Class ;
+    rdfs:label "CalligraphyStyle"@en .
+
+ex:CourtesyName a rdfs:Class ;
+    rdfs:label "CourtesyName"@en .
+
+ex:Person a rdfs:Class ;
+    rdfs:label "Person"@en .
+
+ex:Place a rdfs:Class ;
+    rdfs:label "Place"@en .
+
+ex:School a rdfs:Class ;
+    rdfs:label "School"@en .
+
+ex:TimePeriod a rdfs:Class ;
+    rdfs:label "TimePeriod"@en .
+
+ex:acquaintedWith a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
+
+ex:authorOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+
+ex:birthplace a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Place ;
+
+ex:brotherOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
+
+ex:courtesyName a rdf:Property ;
+    rdfs:domain ex:Person ;
+
+ex:dynasty a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:TimePeriod ;
+
+ex:fatherOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
+
+ex:founderOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:School ;
+
+ex:friendOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
+
+ex:goodAt a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:CalligraphyStyle ;
+
+ex:influencedBy a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
+
+ex:memberOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:School ;
+
+ex:representativeWork a rdf:Property ;
+    rdfs:domain ex:Person ;
+
+ex:sameInterest a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
+
+ex:styleFeature a rdf:Property ;
+
+ex:styleName a rdf:Property ;
+    rdfs:domain ex:Person ;
+
+ex:teacherOf a rdf:Property ;
+    rdfs:domain ex:Person ;
+    rdfs:range ex:Person ;
