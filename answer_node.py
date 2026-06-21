@@ -127,12 +127,8 @@ def answer_node(state):
     elif intent == "styleFeature":
         state["answer"] = f"{person}的书风特点：{values[0]}"
     elif intent == "listByDynasty":
-        if len(values) > 10:
-            shown = "、".join(values[:10])
-            state["answer"] = f"{person}时期的书法家共有{len(values)}位，如：{shown}……"
-        else:
-            shown = "、".join(values)
-            state["answer"] = f"{person}时期的书法家有：{shown}"
+        shown = "、".join(values)
+        state["answer"] = f"{person}时期的书法家共有{len(values)}位：{shown}"
     else:
         answer = "、".join(values)
         state["answer"] = f"{person}的{relation_zh}：{answer}"

@@ -16,19 +16,26 @@ def entity_node(state):
     """
     question = state.get("question", "")
 
+    # 先识别朝代（避免"明朝"中的"明"被误识为人名）
+    dynasty = extract_dynasty(question)
+
     # 识别人名
     person = extract_person(question)
 
-    # 识别朝代（用于"明代的书法家"这类查询）
-    dynasty = None
-    if not person:
-        dynasty = extract_dynasty(question)
+    # 如果同时有人名和朝代，判断是否为误匹配
+    if dynasty and person:
+        if person in dynasty or dynasty in person:
+            # 人名是由朝代词中提取的（如"明"从"明朝"提取），使用朝代
+            state["person"] = dynasty
+        else:
+            # 真正的人名（如"王羲之"）与朝代不同时，以人名为准
+            state["person"] = person
+    else:
+        # 优先使用朝代，其次人名
+        state["person"] = dynasty or person
 
     # 识别所有实体
     all_entities = extract_all_entities(question)
-
-    # 优先使用人名，其次朝代
-    state["person"] = person or dynasty
     state["entities"] = all_entities
 
     if person:

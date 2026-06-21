@@ -140,11 +140,12 @@ def extract_dynasty(question):
                 if row["entity_type"].strip() == "时间":
                     dynasties.append(row["entity_name"].strip())
 
-    # 也支持带"代"的称呼
+    # 也支持带"代"或"朝"的称呼
     dynasty_map = {}
     for d in dynasties:
         dynasty_map[d] = d
         dynasty_map[d + "代"] = d  # 明→明代, 唐→唐代
+        dynasty_map[d + "朝"] = d  # 明→明朝, 唐→唐朝
 
     # 按长度降序匹配
     for name in sorted(dynasty_map.keys(), key=lambda x: (-len(x), x)):

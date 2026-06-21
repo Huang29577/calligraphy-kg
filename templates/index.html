@@ -207,7 +207,7 @@ body {
   display: flex;
   gap: 10px;
   width: max-content;
-  animation: scrollTags 30s linear infinite;
+  animation: scrollTags 80s linear infinite;
 }
 .hot-tags:hover {
   animation-play-state: paused;
@@ -247,8 +247,12 @@ body {
 }
 .results-area.active {
   display: grid;
-  grid-template-columns: 260px 1fr 280px;
+  grid-template-columns: 1fr 300px;
+  grid-template-rows: auto 1fr;
 }
+.results-area.active .info-panel { grid-column: 1 / -1; }
+.results-area.active .graph-container { grid-column: 1; }
+.results-area.active .works-panel { grid-column: 2; }
 
 /* ---- 左侧：信息面板 ---- */
 .info-panel {
@@ -299,6 +303,35 @@ body {
   border-bottom: 1px solid rgba(93,64,55,0.08);
 }
 .info-item:last-child { border-bottom: none; }
+.answer-text { line-height: 1.8; }
+.answer-collapsed {
+  max-height: 5.4em;
+  overflow: hidden;
+  position: relative;
+}
+.answer-collapsed::after {
+  content: '...';
+  position: absolute;
+  bottom: 0; right: 0;
+  background: var(--card-bg);
+  padding: 0 4px;
+  color: var(--text-muted);
+}
+.answer-toggle {
+  background: none;
+  border: 1px solid var(--gold);
+  color: var(--gold-dark);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: var(--transition);
+}
+.answer-toggle:hover {
+  background: rgba(176,141,87,0.1);
+}
 .info-item .label {
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -1007,7 +1040,12 @@ function findWork(name) {
   return DATA.works.find(w => w.name === name);
 }
 function findByDynasty(name) {
-  return DATA.calligraphers.filter(c => c.dynasty === name).concat(DATA.kgEntities.filter(c => c.dynasty === name));
+  // 支持朝代名称的多种写法：明、明代、明朝、唐代、唐
+  // 提取核心朝代名（去"代""朝"后缀）
+  const core = name.replace(/[朝代]$/, '');
+  const match = DATA.calligraphers.filter(c => c.dynasty === name || c.dynasty.includes(core));
+  const other = DATA.kgEntities.filter(c => c.dynasty === name || c.dynasty.includes(core));
+  return match.concat(other);
 }
 
 // ================================================================
@@ -1047,8 +1085,13 @@ async function askBackend(question) {
 
 // 获取实体的显示类型信息（颜色、分类、大小）
 function getEntityTypeInfo(entityName) {
+  // 优先检查是否为朝代（DATA.dynasties 中的名称）
+  const isDynasty = DATA.dynasties.find(d => d.name === entityName || d.name.includes(entityName));
+  if (isDynasty) {
+    return { category: 1, symbolSize: 44, color: '#5D4037', textColor: '#5D4037', fontSize: 12 };
+  }
   // 先在合并后的 kgEntities 中查找
-  const found = DATA.kgEntities.find(e => e.name === entityName) || 
+  const found = DATA.kgEntities.find(e => e.name === entityName) ||
                 DATA.calligraphers.find(e => e.name === entityName);
   if (found) {
     const t = found.type || '';
@@ -1104,6 +1147,9 @@ function extractEntityFromQuestion(question) {
   }
   for (const d of DATA.dynasties) {
     if (question.includes(d.name)) return d.name;
+    // 支持"明朝"匹配"明代"、 "唐朝"匹配"唐代"等变体
+    const altName = d.name.replace(/[代朝]$/, '');
+    if (altName && question.includes(altName)) return d.name;
   }
   for (const s of DATA.styles) {
     if (question.includes(s)) return s;
@@ -1111,11 +1157,20 @@ function extractEntityFromQuestion(question) {
   return null;
 }
 
+// 辅助函数：去重添加连线
+function pushLink(links, linkKeys, source, target, label, lineStyle) {
+  const key = `${source}|${target}|${label}`;
+  if (linkKeys.has(key)) return;
+  linkKeys.add(key);
+  links.push({ source, target, label, lineStyle });
+}
+
 // 构建 KG 实体专用的图谱数据（支持任意 TTL 谓词，新增实体自动渲染）
 function buildKGEntityGraph(entity) {
   const nodes = [];
   const links = [];
   const added = new Set();
+  const linkKeys = new Set();
 
   nodes.push({
     id: entity.name, name: entity.name, category: 0, symbolSize: 70,
@@ -1133,7 +1188,7 @@ function buildKGEntityGraph(entity) {
       label: { show: true, fontSize: 12, color: '#5D4037' }
     });
     added.add(dynasty);
-    links.push({ source: entity.name, target: dynasty, label: '所属朝代', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+    pushLink(links, linkKeys, entity.name, dynasty, '所属朝代', { color: '#B08D57', width: 1.5, curveness: 0.2 });
   }
 
   // 书体
@@ -1145,7 +1200,7 @@ function buildKGEntityGraph(entity) {
       label: { show: true, fontSize: 12, color: '#5D4037' }
     });
     added.add(style);
-    links.push({ source: entity.name, target: style, label: '擅长书体', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+    pushLink(links, linkKeys, entity.name, style, '擅长书体', { color: '#B08D57', width: 1.5, curveness: 0.2 });
   }
 
   // ===== 通用 TTL 关系渲染（支持任意新增谓词） =====
@@ -1168,7 +1223,7 @@ function buildKGEntityGraph(entity) {
           });
           added.add(value);
         }
-        links.push({ source: entity.name, target: value, label: label, lineStyle: { color: '#8B2500', width: 2, curveness: 0.3 } });
+        pushLink(links, linkKeys, entity.name, value, label, { color: '#8B2500', width: 2, curveness: 0.3 });
       } else if (value) {
         if (!added.has(value)) {
           const typeInfo = getEntityTypeInfo(value);
@@ -1179,7 +1234,7 @@ function buildKGEntityGraph(entity) {
           });
           added.add(value);
         }
-        links.push({ source: entity.name, target: value, label: label, lineStyle: { color: '#B08D57', width: 1.8, curveness: 0.2, type: 'dashed' } });
+        pushLink(links, linkKeys, entity.name, value, label, { color: '#B08D57', width: 1.8, curveness: 0.2, type: 'dashed' });
       }
     });
   }
@@ -1202,7 +1257,7 @@ function buildKGEntityGraph(entity) {
           if (val === p) { relLabel = PREDICATE_LABELS[pred] || pred; break; }
         }
       }
-      links.push({ source: entity.name, target: p, label: relLabel, lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.3 } });
+      pushLink(links, linkKeys, entity.name, p, relLabel, { color: '#B08D57', width: 1.5, curveness: 0.3 });
     });
   }
 
@@ -1232,6 +1287,7 @@ function buildGraphData(calligrapher) {
   const nodes = [];
   const links = [];
   const added = new Set();
+  const linkKeys = new Set();
 
   // 中心节点
   nodes.push({
@@ -1260,7 +1316,7 @@ function buildGraphData(calligrapher) {
     });
     added.add(dynasty);
   }
-  links.push({ source: calligrapher.name, target: dynasty, label: '所属朝代', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+  pushLink(links, linkKeys, calligrapher.name, dynasty, '所属朝代', { color: '#B08D57', width: 1.5, curveness: 0.2 });
 
   // 书体
   const style = calligrapher.relations.style;
@@ -1272,7 +1328,7 @@ function buildGraphData(calligrapher) {
     });
     added.add(style);
   }
-  links.push({ source: calligrapher.name, target: style, label: '擅长书体', lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.2 } });
+  pushLink(links, linkKeys, calligrapher.name, style, '擅长书体', { color: '#B08D57', width: 1.5, curveness: 0.2 });
 
   // 人物关系（利用 kgRelations 推断具体关系名）
   if (calligrapher.relations.people) {
@@ -1293,7 +1349,7 @@ function buildGraphData(calligrapher) {
           if (val === p) { relLabel = PREDICATE_LABELS[pred] || pred; break; }
         }
       }
-      links.push({ source: calligrapher.name, target: p, label: relLabel, lineStyle: { color: '#B08D57', width: 1.5, curveness: 0.3 } });
+      pushLink(links, linkKeys, calligrapher.name, p, relLabel, { color: '#B08D57', width: 1.5, curveness: 0.3 });
     });
   }
 
@@ -1309,7 +1365,7 @@ function buildGraphData(calligrapher) {
         });
         added.add(w);
       }
-      links.push({ source: calligrapher.name, target: w, label: '代表作品', lineStyle: { color: '#B08D57', width: 2, curveness: 0.2 } });
+      pushLink(links, linkKeys, calligrapher.name, w, '代表作品', { color: '#B08D57', width: 2, curveness: 0.2 });
     });
   }
 
@@ -1322,7 +1378,7 @@ function buildGraphData(calligrapher) {
       label: { show: true, fontSize: 11, color: '#8B7335' }
     });
     added.add(title);
-    links.push({ source: calligrapher.name, target: title, label: '称号', lineStyle: { color: '#C4A265', width: 1.2, curveness: 0.2 } });
+    pushLink(links, linkKeys, calligrapher.name, title, '称号', { color: '#C4A265', width: 1.2, curveness: 0.2 });
   }
 
   return { nodes, links };
@@ -1695,17 +1751,23 @@ function updateInfoWithAnswer(question, answer, kgEntity) {
   const container = document.getElementById('infoContent');
   let html = '';
 
-  // API 回答区块
+  // API 回答区块（支持折叠长内容）
+  const isLongAnswer = answer.length > 120;
   html += `
     <div class="info-item" style="background:rgba(176,141,87,0.06);border-radius:4px;padding:10px;margin-bottom:12px;border-left:3px solid var(--gold);">
       <div class="label" style="color:var(--gold-dark);">知识图谱回答</div>
-      <div class="value" style="font-size:1rem;font-weight:600;color:var(--ink);">${escapeHtml(answer)}</div>
+      <div class="value" style="font-size:1rem;font-weight:600;color:var(--ink);">
+        <div class="answer-text ${isLongAnswer ? 'answer-collapsed' : ''}" id="answerText">${escapeHtml(answer)}</div>
+        ${isLongAnswer ? '<button class="answer-toggle" onclick="toggleAnswer()">展开全部</button>' : ''}
+      </div>
     </div>`;
 
   // 如果关联了 KG 实体，展示实体详情
   if (kgEntity) {
     const hasRich = kgEntity.achievement || kgEntity.desc;
-    const tagText = kgEntity.type || 'KG实体';
+    // 判断实体类型标签：如果是朝代则显示"朝代"
+    const isDynastyTag = DATA.dynasties.some(d => d.name === kgEntity.name || d.name.includes(kgEntity.name));
+    const tagText = isDynastyTag ? '朝代' : (kgEntity.type || 'KG实体');
     html += `
       <div class="info-item">
         <div class="label">姓名</div>
@@ -1754,6 +1816,20 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
+}
+
+// 折叠/展开答案
+function toggleAnswer() {
+  const el = document.getElementById('answerText');
+  if (!el) return;
+  const btn = el.parentNode.querySelector('.answer-toggle');
+  if (el.classList.contains('answer-collapsed')) {
+    el.classList.remove('answer-collapsed');
+    btn.textContent = '收起';
+  } else {
+    el.classList.add('answer-collapsed');
+    btn.textContent = '展开全部';
+  }
 }
 
 // ================================================================
