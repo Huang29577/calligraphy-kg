@@ -11,14 +11,17 @@ from few_shot_examples import INTENT_KEYWORDS, INTENT_TO_RELATION_ZH
 def parse_intent(question):
     """从问题中识别查询意图
 
-        基于关键词匹配，返回意图标识（intent）。
+        基于关键词匹配，按意图优先级和关键词长度匹配。
+        先按意图顺序，在每个意图内按关键词长度降序匹配。
         如无法识别返回 None。
     """
     if not question:
         return None
 
     for intent, keywords in INTENT_KEYWORDS.items():
-        for kw in keywords:
+        # 每个意图内按关键词长度降序（长关键词优先匹配）
+        sorted_kw = sorted(keywords, key=lambda x: (-len(x), x))
+        for kw in sorted_kw:
             if kw in question:
                 return intent
 

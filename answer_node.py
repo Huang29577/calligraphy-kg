@@ -100,6 +100,9 @@ def answer_node(state):
     elif intent == "teacherOf":
         answer = "、".join(values)
         state["answer"] = f"{person}的老师是：{answer}"
+    elif intent == "studentsOf":
+        answer = "、".join(values)
+        state["answer"] = f"{person}的弟子/学生有：{answer}"
     elif intent == "birthplace":
         state["answer"] = f"{person}的籍贯是：{values[0]}"
     elif intent == "dynasty":
@@ -131,6 +134,9 @@ def answer_node(state):
     elif intent == "listByDynasty":
         shown = "、".join(values)
         state["answer"] = f"{person}时期的书法家共有{len(values)}位：{shown}"
+    elif intent == "listByStyle":
+        shown = "、".join(values)
+        state["answer"] = f"擅长{person}的书法家共有{len(values)}位：{shown}"
     else:
         answer = "、".join(values)
         state["answer"] = f"{person}的{relation_zh}：{answer}"

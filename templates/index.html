@@ -45,7 +45,8 @@ body {
     repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(139, 119, 90, 0.01) 3px, rgba(139, 119, 90, 0.01) 4px);
   min-height: 100vh;
   overflow-x: hidden;
-  line-height: 1.7;
+  line-height: 1.8;
+  font-size: 16px;
 }
 
 /* ============================================================
@@ -157,23 +158,24 @@ body {
   border: none;
   outline: none;
   background: transparent;
-  padding: 16px 28px;
+  padding: 18px 30px;
   font-family: var(--font-body);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   color: var(--text-primary);
 }
 .search-wrapper input::placeholder {
   color: var(--text-muted);
   font-style: italic;
+  font-size: 1rem;
 }
 .search-wrapper button {
-  padding: 14px 32px;
+  padding: 16px 36px;
   background: var(--border-brown);
   color: #F8F3EA;
   border: none;
   cursor: pointer;
   font-family: var(--font-title);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   letter-spacing: 4px;
   transition: var(--transition);
   position: relative;
@@ -207,7 +209,7 @@ body {
   display: flex;
   gap: 10px;
   width: max-content;
-  animation: scrollTags 80s linear infinite;
+  animation: scrollTags 160s linear infinite;
 }
 .hot-tags:hover {
   animation-play-state: paused;
@@ -217,10 +219,10 @@ body {
   100% { transform: translateX(-50%); }
 }
 .hot-tag {
-  padding: 5px 16px;
+  padding: 6px 18px;
   border: 1px solid rgba(93,64,55,0.2);
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   cursor: pointer;
   transition: var(--transition);
@@ -340,9 +342,9 @@ body {
   margin-bottom: 2px;
 }
 .info-item .value {
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 /* ---- 中间：知识图谱 ---- */
@@ -1943,7 +1945,24 @@ function renderStyleEvolution() {
   styleChart.setOption(option);
   styleChart.on('click', function(params) {
     if (params.dataType === 'node') {
-      handleQuery(params.name);
+      const styleName = params.name;
+      // 直接调用 handleQuery，前端图谱已有书体回退处理
+      currentQuery = styleName;
+      const area = document.getElementById('resultsArea');
+      area.classList.add('active');
+      // 用完整的自然语言查询发给后端
+      askBackend('擅长' + styleName + '的书法家有哪些').then(apiResult => {
+        const apiAnswer = apiResult ? apiResult.answer : null;
+        if (apiAnswer) {
+          updateInfoWithAnswer('擅长' + styleName + '的书法家', apiAnswer, null);
+        } else {
+          updateInfo(styleName);
+        }
+      });
+      // 前端图谱直接渲染（不依赖后端）
+      renderGraph(styleName);
+      updateWorks(styleName);
+      area.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
 

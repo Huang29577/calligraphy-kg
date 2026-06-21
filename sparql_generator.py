@@ -92,6 +92,27 @@ SELECT ?value WHERE {{
 ORDER BY ?value
 """.strip()
 
+    # ── 特殊：按书体列出人物（反向擅长） ──
+    if intent == "listByStyle":
+        return f"""
+PREFIX ex: <http://example.org/>
+SELECT ?value WHERE {{
+    ?value a ex:Person .
+    ?value ex:goodAt ex:{person_name} .
+}}
+ORDER BY ?value
+""".strip()
+
+    # ── 特殊：查询弟子/学生（反向师承） ──
+    if intent == "studentsOf":
+        return f"""
+PREFIX ex: <http://example.org/>
+SELECT ?value WHERE {{
+    ?value ex:teacherOf ex:{person_name} .
+}}
+ORDER BY ?value
+""".strip()
+
     prop = INTENT_TO_PROP.get(intent)
     if not prop:
         return ""

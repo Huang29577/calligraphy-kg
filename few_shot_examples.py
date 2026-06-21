@@ -93,6 +93,30 @@ SELECT ?value WHERE {
         "explanation": "查询人物的老师"
     },
 
+    # ── 4.5 学生查询（反向师承） ──
+    {
+        "question": "文徵明是谁的老师",
+        "sparql": """
+PREFIX ex: <http://example.org/>
+SELECT ?value WHERE {
+    ?value ex:teacherOf ex:文徵明 .
+}""",
+        "relation_zh": "学生/弟子",
+        "intent": "studentsOf",
+        "explanation": "查询拜师于该人物的学生（反向师承关系）"
+    },
+    {
+        "question": "文徵明的学生有哪些",
+        "sparql": """
+PREFIX ex: <http://example.org/>
+SELECT ?value WHERE {
+    ?value ex:teacherOf ex:文徵明 .
+}""",
+        "relation_zh": "学生/弟子",
+        "intent": "studentsOf",
+        "explanation": "查询该人物的弟子"
+    },
+
     # ── 5. 籍贯 ──
     {
         "question": "王羲之的籍贯是什么",
@@ -141,6 +165,21 @@ SELECT ?value WHERE {
         "relation_zh": "擅长书体",
         "intent": "goodAt",
         "explanation": "查询人物擅长的书体"
+    },
+
+    # ── 7.5 按书体查人物 ──
+    {
+        "question": "擅长行书的书法家有哪些",
+        "sparql": """
+PREFIX ex: <http://example.org/>
+SELECT ?value WHERE {
+    ?value a ex:Person .
+    ?value ex:goodAt ex:行书 .
+}
+ORDER BY ?value""",
+        "relation_zh": "擅长书体",
+        "intent": "listByStyle",
+        "explanation": "按书体查询擅长的书法家"
     },
 
     # ── 8. 兄弟 ──
@@ -252,10 +291,13 @@ SELECT ?value WHERE {
 INTENT_KEYWORDS = {
     "courtesyName": ["字号", "字是什么", "表字", "字什么"],
     "styleName": ["号是什么", "别号", "号是", "号什么", "号"],
+    "studentsOf": ["是谁的老师", "学生有哪些", "弟子有哪些", "门生", "徒弟", "弟子是"],
     "fatherOf": ["父亲", "爸爸", "爹", "父是", "父亲是谁"],
     "teacherOf": ["老师", "师父", "师傅", "师承", "从师"],
     "birthplace": ["籍贯", "出生地", "故乡", "哪里人"],
     "dynasty": ["朝代", "时代", "什么朝"],
+    "listByStyle": ["擅长此体的书法家", "擅长此体的", "此体的书法家", "擅长行书", "擅长草书", "擅长楷书", "擅长隶书", "擅长篆书"],
+    "listByDynasty": ["有哪些书法家", "书法家有哪些", "书法家谁", "书法家人", "有哪些人物"],
     "goodAt": ["擅长", "书体", "字体", "什么体", "书法风格"],
     "brotherOf": ["兄弟", "哥哥", "弟弟", "兄长"],
     "friendOf": ["好友", "朋友", "交游"],
@@ -265,7 +307,6 @@ INTENT_KEYWORDS = {
     "representativeWork": ["代表作", "代表作品", "作品"],
     "authorOf": ["著作", "著述", "写", "撰"],
     "styleFeature": ["风格", "特点", "特征", "书风"],
-    "listByDynasty": ["有哪些书法家", "书法家有哪些", "书法家谁", "书法家人", "有哪些人物"],
 }
 
 # 意图 → 中文关系名映射
@@ -274,6 +315,7 @@ INTENT_TO_RELATION_ZH = {
     "styleName": "号",
     "fatherOf": "父子",
     "teacherOf": "师承",
+    "studentsOf": "学生/弟子",
     "birthplace": "籍贯",
     "dynasty": "所处时代",
     "goodAt": "擅长书体",
@@ -286,6 +328,7 @@ INTENT_TO_RELATION_ZH = {
     "authorOf": "著述",
     "styleFeature": "风格特征",
     "listByDynasty": "朝代查询",
+    "listByStyle": "书体查询",
 }
 
 
